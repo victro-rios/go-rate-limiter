@@ -9,7 +9,7 @@ func main() {
 	fmt.Println("Initializing server...")
 	port := ":8080"
 	mux := http.NewServeMux()
-	mux.HandleFunc("/healthz", healthHandler)
+	mux.HandleFunc("/health", healthHandler)
 	server := &http.Server{
 		Addr:    port,
 		Handler: mux,
