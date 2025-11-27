@@ -21,7 +21,7 @@ func (rateLimiter *RateLimiter) Consume(key string, tokensToConsume uint8) error
 		rateLimiter.buckets[key] = &atomic.Int32{}
 		rateLimiter.buckets[key].Store(10)
 	}
-	rateLimiter.buckets[key].Add(1)
+	rateLimiter.buckets[key].Add(-1)
 	fmt.Printf("Consuming... %d tokens left", rateLimiter.buckets[key].Load())
 	if rateLimiter.buckets[key].Load() <= 0 {
 		fmt.Printf("Throwing error 429")
