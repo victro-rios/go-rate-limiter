@@ -1,5 +1,7 @@
 package ratelimiter
 
 type Config struct {
-	MaximumBurst int
+	MaximumBurst        int
+	TokensPerBucket     int
+	RefillRatePerSecond int
 }
