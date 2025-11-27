@@ -1,2 +1,2 @@
 # go-rate-limiter
-Golang server that works as a rate limiter
+Golang middleware that works as a rate limiter

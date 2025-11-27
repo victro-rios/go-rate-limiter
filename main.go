@@ -1,24 +1,19 @@
-package main
+package ratelimiter
 
 import (
+	"sync/atomic"
 	"fmt"
-	"net/http"
 )
 
-func main() {
-	fmt.Println("Initializing server...")
-	port := ":8080"
-	mux := http.NewServeMux()
-	mux.HandleFunc("/health", healthHandler)
-	server := &http.Server{
-		Addr:    port,
-		Handler: mux,
-	}
-	server.ListenAndServe()
+type RateLimiter struct {
+	cfg: ConfConfig
 }
 
-func healthHandler(responseWriter http.ResponseWriter, request *http.Request) {
-	responseWriter.Header().Add("Content-Type", "text/plain; charset=utf-8")
-	responseWriter.WriteHeader(http.StatusOK)
-	responseWriter.Write([]byte(http.StatusText(http.StatusOK)))
+func New(config Config) {
+	return RateLimiter{cfg: config}
+}
+
+func Consume(key string, tokensToConsume uint8) error {
+	fmt.Printf("Consuming");
+	return nil
 }
