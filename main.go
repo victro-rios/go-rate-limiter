@@ -11,7 +11,7 @@ type RateLimiter struct {
 }
 
 func New(config Config) *RateLimiter {
-	return &RateLimiter{cfg: config}
+	return &RateLimiter{cfg: config, buckets: make(map[string]int)}
 }
 
 func (rateLimiter *RateLimiter) Consume(key string, tokensToConsume uint8) error {
