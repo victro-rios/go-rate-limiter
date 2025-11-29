@@ -41,10 +41,10 @@ func (rateLimiter *RateLimiter) Consume(key string, tokensToConsume uint8) error
 		rateLimiter.buckets[key].Store(rateLimiter.cfg.MaximumBurst)
 		rateLimiter.startRefilling(key)
 	}
-	rateLimiter.logger(fmt.Sprintf("consuming token. %d tokens left\n", rateLimiter.buckets[key].Load()))
+	rateLimiter.logger(fmt.Sprintf("consuming token. %d tokens left", rateLimiter.buckets[key].Load()))
 
 	if rateLimiter.buckets[key].Load() <= 0 {
-		rateLimiter.logger("throwing error 429\n")
+		rateLimiter.logger("throwing error 429")
 		return errors.New("too many requests")
 	}
 
