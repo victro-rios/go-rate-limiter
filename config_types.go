@@ -5,4 +5,5 @@ type Config struct {
 	TokensPerBucket         int32
 	RefillRatePerPeriod     int32
 	PeriodDurationInSeconds int32
+	Verbose                 bool
 }

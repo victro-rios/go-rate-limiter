@@ -21,7 +21,17 @@ func (rateLimiter *RateLimiter) startRefilling(key string) {
 		remaining := rateLimiter.buckets[key].Load()
 		// If the capacity will overflow then maximum burst will be set
 		rateLimiter.buckets[key].Store(min(rateLimiter.cfg.MaximumBurst, remaining+rateLimiter.cfg.RefillRatePerPeriod))
+		rateLimiter.logger("refilling tokens")
 	}
+}
+
+func (rateLimiter RateLimiter) logger(message string) {
+	verbosePrefix := "RateLimiter:Logger:: "
+	if !rateLimiter.cfg.Verbose || message == "" {
+		return
+	}
+
+	fmt.Println(verbosePrefix + message)
 }
 
 func (rateLimiter *RateLimiter) Consume(key string, tokensToConsume uint8) error {
@@ -31,9 +41,10 @@ func (rateLimiter *RateLimiter) Consume(key string, tokensToConsume uint8) error
 		rateLimiter.buckets[key].Store(rateLimiter.cfg.MaximumBurst)
 		rateLimiter.startRefilling(key)
 	}
-	fmt.Printf("Consuming... %d tokens left", rateLimiter.buckets[key].Load())
+	rateLimiter.logger(fmt.Sprintf("consuming token. %d tokens left\n", rateLimiter.buckets[key].Load()))
+
 	if rateLimiter.buckets[key].Load() <= 0 {
-		fmt.Printf("throwing error 429")
+		rateLimiter.logger("throwing error 429\n")
 		return errors.New("too many requests")
 	}
 
