@@ -4,6 +4,7 @@ rate limiter in a few simple steps.
 
 ## Installation
 `go get github.com/victro-rios/go-rate-limiter`
+
 `go mod tidy`
 
 ## Usage
