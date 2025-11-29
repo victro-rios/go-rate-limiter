@@ -9,17 +9,18 @@ import (
 )
 
 func New(config Config) *RateLimiter {
+	setConfigDefaultValues(&config)
 	return &RateLimiter{cfg: config, buckets: make(map[string]*atomic.Int32)}
 }
 
 func (rateLimiter *RateLimiter) startRefilling(key string) {
-	ticker := time.NewTicker(1 * time.Minute)
+	ticker := time.NewTicker(time.Duration(rateLimiter.cfg.PeriodDurationInSeconds) * time.Second)
 	defer ticker.Stop()
 
 	for range ticker.C {
 		remaining := rateLimiter.buckets[key].Load()
 		// If the capacity will overflow then maximum burst will be set
-		rateLimiter.buckets[key].Store(min(rateLimiter.cfg.MaximumBurst, rateLimiter.cfg.RefillRatePerMinute+remaining))
+		rateLimiter.buckets[key].Store(min(rateLimiter.cfg.MaximumBurst, remaining+rateLimiter.cfg.RefillRatePerPeriod))
 	}
 }
 
@@ -30,11 +31,12 @@ func (rateLimiter *RateLimiter) Consume(key string, tokensToConsume uint8) error
 		rateLimiter.buckets[key].Store(rateLimiter.cfg.MaximumBurst)
 		rateLimiter.startRefilling(key)
 	}
-	rateLimiter.buckets[key].Add(-1)
 	fmt.Printf("Consuming... %d tokens left", rateLimiter.buckets[key].Load())
 	if rateLimiter.buckets[key].Load() <= 0 {
 		fmt.Printf("throwing error 429")
 		return errors.New("too many requests")
 	}
+
+	rateLimiter.buckets[key].Add(-1)
 	return nil
 }
