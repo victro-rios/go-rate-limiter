@@ -53,7 +53,16 @@ func (rateLimiter *RateLimiter) Consume(key string, tokensToConsume uint8) error
 
 	if *keyValue <= 0 {
 		rateLimiter.logger("throwing error 429")
-		return errors.New("too many requests")
+		return RateLimiterError{
+			Msg:  "too many requests",
+			Code: 429,
+			Headers: RateLimitHeaders{
+				RetryAfter:            rateLimiter.nextRefill - int32(time.Now().Unix()),
+				X_RateLimit_Limit:     rateLimiter.cfg.MaximumBurst,
+				X_RateLimit_Remaining: 0,
+				X_RateLimit_Reset:     rateLimiter.nextRefill,
+			},
+		}
 	}
 	// TODO: Check concurrency
 	rateLimiter.cfg.StoreClient.Set(context.Background(), key, int32(*keyValue-1))

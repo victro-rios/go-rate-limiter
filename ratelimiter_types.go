@@ -14,6 +14,14 @@ type MemoryStoreClient struct {
 	buckets map[string]*atomic.Int32
 }
 
+type RateLimitHeaders struct {
+	RetryAfter            int32
+	X_RateLimit_Limit     int32
+	X_RateLimit_Remaining int32
+	X_RateLimit_Reset     int32
+}
+
 type RateLimiter struct {
-	cfg Config
+	cfg        Config
+	nextRefill int32
 }
