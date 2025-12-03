@@ -43,12 +43,12 @@ func (rateLimiter *RateLimiter) Consume(key string, tokensToConsume uint8) error
 	if err != nil {
 		return errors.New("error while consuming the key from store client")
 	}
-
 	if keyValue == nil {
 		rateLimiter.cfg.StoreClient.Set(context.Background(), key, rateLimiter.cfg.MaximumBurst)
-		rateLimiter.startRefilling(key)
+		go rateLimiter.startRefilling(key)
 		keyValue, _ = rateLimiter.cfg.StoreClient.Get(context.Background(), key)
 	}
+
 	rateLimiter.logger(fmt.Sprintf("consuming token. %d tokens left", *keyValue))
 
 	if *keyValue <= 0 {
