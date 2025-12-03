@@ -1,6 +1,13 @@
 package ratelimiter
 
+import "sync/atomic"
+
 func setConfigDefaultValues(config *Config) {
+	if config.StoreClient == nil {
+		config.StoreClient = &MemoryStoreClient{
+			buckets: make(map[string]*atomic.Int32),
+		}
+	}
 	if config.MaximumBurst == 0 {
 		config.MaximumBurst = 100
 	}

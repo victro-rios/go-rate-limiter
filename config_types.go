@@ -1,6 +1,7 @@
 package ratelimiter
 
 type Config struct {
+	StoreClient             StoreClient
 	MaximumBurst            int32
 	TokensPerBucket         int32
 	RefillRatePerPeriod     int32

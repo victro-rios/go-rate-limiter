@@ -2,31 +2,35 @@
 package ratelimiter
 
 import (
+	"context"
 	"errors"
 	"fmt"
-	"sync/atomic"
 	"time"
 )
 
 func New(config Config) *RateLimiter {
 	setConfigDefaultValues(&config)
-	return &RateLimiter{cfg: config, buckets: make(map[string]*atomic.Int32)}
+	return &RateLimiter{cfg: config}
 }
 
-func (rateLimiter *RateLimiter) startRefilling(key string) {
+func (rateLimiter *RateLimiter) startRefilling(key string) error {
 	ticker := time.NewTicker(time.Duration(rateLimiter.cfg.PeriodDurationInSeconds) * time.Second)
 	defer ticker.Stop()
 
 	for range ticker.C {
-		remaining := rateLimiter.buckets[key].Load()
+		remaining, err := rateLimiter.cfg.StoreClient.Get(context.Background(), key)
+		if err != nil {
+			return errors.New("error getting key from store client")
+		}
 		// If the capacity will overflow then maximum burst will be set
-		rateLimiter.buckets[key].Store(min(rateLimiter.cfg.MaximumBurst, remaining+rateLimiter.cfg.RefillRatePerPeriod))
+		rateLimiter.cfg.StoreClient.Set(context.Background(), key, min(rateLimiter.cfg.MaximumBurst, *remaining+rateLimiter.cfg.RefillRatePerPeriod))
 		rateLimiter.logger("refilling tokens")
 	}
+	return nil
 }
 
 func (rateLimiter RateLimiter) logger(message string) {
-	verbosePrefix := "RateLimiter:Logger:: "
+	verbosePrefix := "RateLimiter:Logger:"
 	if !rateLimiter.cfg.Verbose || message == "" {
 		return
 	}
@@ -35,19 +39,22 @@ func (rateLimiter RateLimiter) logger(message string) {
 }
 
 func (rateLimiter *RateLimiter) Consume(key string, tokensToConsume uint8) error {
-	_, exists := rateLimiter.buckets[key]
-	if !exists {
-		rateLimiter.buckets[key] = &atomic.Int32{}
-		rateLimiter.buckets[key].Store(rateLimiter.cfg.MaximumBurst)
+	keyValue, err := rateLimiter.cfg.StoreClient.Get(context.Background(), key)
+	if err != nil {
+		return errors.New("error while consuming the key from store client")
+	}
+
+	if keyValue == nil {
+		rateLimiter.cfg.StoreClient.Set(context.Background(), key, rateLimiter.cfg.MaximumBurst)
 		rateLimiter.startRefilling(key)
 	}
-	rateLimiter.logger(fmt.Sprintf("consuming token. %d tokens left", rateLimiter.buckets[key].Load()))
+	rateLimiter.logger(fmt.Sprintf("consuming token. %d tokens left", *keyValue))
 
-	if rateLimiter.buckets[key].Load() <= 0 {
+	if *keyValue <= 0 {
 		rateLimiter.logger("throwing error 429")
 		return errors.New("too many requests")
 	}
-
-	rateLimiter.buckets[key].Add(-1)
+	// TODO: Check concurrency
+	rateLimiter.cfg.StoreClient.Set(context.Background(), key, int32(*keyValue-1))
 	return nil
 }
