@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"time"
 )
 
@@ -14,9 +15,11 @@ func New(config Config) *RateLimiter {
 }
 
 func (rateLimiter *RateLimiter) startRefilling(key string) error {
-	ticker := time.NewTicker(time.Duration(rateLimiter.cfg.PeriodDurationInSeconds) * time.Second)
+	interval := time.Duration(rateLimiter.cfg.PeriodDurationInSeconds) * time.Second
+	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 
+	rateLimiter.nextRefill = int32(time.Now().Add(interval).Unix())
 	for range ticker.C {
 		remaining, err := rateLimiter.cfg.StoreClient.Get(context.Background(), key)
 		if err != nil {
@@ -25,6 +28,7 @@ func (rateLimiter *RateLimiter) startRefilling(key string) error {
 		// If the capacity will overflow then maximum burst will be set
 		rateLimiter.cfg.StoreClient.Set(context.Background(), key, min(rateLimiter.cfg.MaximumBurst, *remaining+rateLimiter.cfg.RefillRatePerPeriod))
 		rateLimiter.logger("refilling tokens")
+		rateLimiter.nextRefill = int32(time.Now().Add(interval).Unix())
 	}
 	return nil
 }
@@ -38,10 +42,13 @@ func (rateLimiter RateLimiter) logger(message string) {
 	fmt.Println(verbosePrefix + message)
 }
 
-func (rateLimiter *RateLimiter) Consume(key string, tokensToConsume uint8) error {
+func (rateLimiter *RateLimiter) Consume(key string, tokensToConsume uint8) *RateLimiterError {
 	keyValue, err := rateLimiter.cfg.StoreClient.Get(context.Background(), key)
 	if err != nil {
-		return errors.New("error while consuming the key from store client")
+		return &RateLimiterError{
+			Msg:  "error while consuming the key from store client",
+			Code: 500,
+		}
 	}
 	if keyValue == nil {
 		rateLimiter.cfg.StoreClient.Set(context.Background(), key, rateLimiter.cfg.MaximumBurst)
@@ -53,9 +60,9 @@ func (rateLimiter *RateLimiter) Consume(key string, tokensToConsume uint8) error
 
 	if *keyValue <= 0 {
 		rateLimiter.logger("throwing error 429")
-		return RateLimiterError{
+		return &RateLimiterError{
 			Msg:  "too many requests",
-			Code: 429,
+			Code: http.StatusTooManyRequests,
 			Headers: RateLimitHeaders{
 				RetryAfter:            rateLimiter.nextRefill - int32(time.Now().Unix()),
 				X_RateLimit_Limit:     rateLimiter.cfg.MaximumBurst,
