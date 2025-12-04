@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 )
 
@@ -64,10 +65,10 @@ func (rateLimiter *RateLimiter) Consume(key string, tokensToConsume uint8) *Rate
 			Msg:  "too many requests",
 			Code: http.StatusTooManyRequests,
 			Headers: RateLimitHeaders{
-				RetryAfter:            rateLimiter.nextRefill - int32(time.Now().Unix()),
-				X_RateLimit_Limit:     rateLimiter.cfg.MaximumBurst,
-				X_RateLimit_Remaining: 0,
-				X_RateLimit_Reset:     rateLimiter.nextRefill,
+				RetryAfter:            strconv.Itoa(int(rateLimiter.nextRefill - int32(time.Now().Unix()))),
+				X_RateLimit_Limit:     strconv.Itoa(int(rateLimiter.cfg.MaximumBurst)),
+				X_RateLimit_Remaining: "0",
+				X_RateLimit_Reset:     strconv.Itoa(int(rateLimiter.nextRefill)),
 			},
 		}
 	}

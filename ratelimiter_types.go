@@ -15,10 +15,10 @@ type MemoryStoreClient struct {
 }
 
 type RateLimitHeaders struct {
-	RetryAfter            int32
-	X_RateLimit_Limit     int32
-	X_RateLimit_Remaining int32
-	X_RateLimit_Reset     int32
+	RetryAfter            string
+	X_RateLimit_Limit     string
+	X_RateLimit_Remaining string
+	X_RateLimit_Reset     string
 }
 
 type RateLimiter struct {
