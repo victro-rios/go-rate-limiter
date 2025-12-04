@@ -34,7 +34,7 @@ func (rateLimiter *RateLimiter) startRefilling(key string) error {
 	return nil
 }
 
-func (rateLimiter RateLimiter) logger(message string) {
+func (rateLimiter *RateLimiter) logger(message string) {
 	verbosePrefix := "RateLimiter:Logger:"
 	if !rateLimiter.cfg.Verbose || message == "" {
 		return
