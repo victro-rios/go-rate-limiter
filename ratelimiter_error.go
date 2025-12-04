@@ -2,7 +2,7 @@ package ratelimiter
 
 type RateLimiterError struct {
 	Msg     string
-	Code    int32
+	Code    int
 	Headers RateLimitHeaders
 }
 
