@@ -20,8 +20,8 @@ rate limiter in a few simple steps.
 	mux := http.NewServeMux()
     // could be GET/POST or any other method
 	mux.HandleFunc("POST /sampleEndpoint", func(w http.ResponseWriter, r *http.Request) {
-		// taking request.Host as a key
-        err := rateLimiter.Consume(r.Host, 1)
+		// taking request.RemoteAddr as a key
+        err := rateLimiter.Consume(r.RemoteAddr, 1)
 		if err != nil {
 			w.WriteHeader(http.StatusTooManyRequests)
 			w.Write([]byte("Too many requests"))
@@ -29,7 +29,7 @@ rate limiter in a few simple steps.
 		}
         // normal behavior 
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(fmt.Sprintf("Thanks for adding host: %s", r.Host)))
+		w.Write([]byte("OK"))
 	})
 ```
 
@@ -42,19 +42,19 @@ rate limiter in a few simple steps.
 	mux := http.NewServeMux()
     // could be GET/POST or any other method
 	mux.HandleFunc("POST /sampleEndpoint", func(w http.ResponseWriter, r *http.Request) {
-		// taking request.Host as a key
-        err := rateLimiter.Consume(r.Host, 1)
+		// taking request.RemoteAddr as a key
+        err := rateLimiter.Consume(r.RemoteAddr, 1)
 		if err != nil {
+			w.Header().Set("Retry-After", err.Headers.RetryAfter)
+			w.Header().Set("X-RateLimit-Limit", err.Headers.X_RateLimit_Limit)
+			w.Header().Set("X-RateLimit-Remaining", err.Headers.X_RateLimit_Remaining)
+			w.Header().Set("X-RateLimit-Reset", err.Headers.X_RateLimit_Reset)
 			w.WriteHeader(http.StatusTooManyRequests)
-			w.Header().Add("Retry-After", err.Headers.RetryAfter)
-			w.Header().Add("X-RateLimit-Limit", err.Headers.X_RateLimit_Limit)
-			w.Header().Add("X-RateLimit-Remaining", err.Headers.X_RateLimit_Remaining)
-			w.Header().Add("X-RateLimit-Reset", err.Headers.X_RateLimit_Reset)
 			w.Write([]byte("Too many requests"))
 			return
 		}
         // normal behavior 
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(fmt.Sprintf("Thanks for adding host: %s", r.Host)))
+		w.Write([]byte("OK"))
 	})
 ```
