@@ -48,7 +48,7 @@ rate limiter in a few simple steps.
 			w.WriteHeader(http.StatusTooManyRequests)
 			w.Header().Add("Retry-After", err.Headers.RetryAfter)
 			w.Header().Add("X-RateLimit-Limit", err.Headers.X_RateLimit_Limit)
-			w.header().Add("X-RateLimit-Remaining", err.Headers.X_RateLimit_Remaining)
+			w.Header().Add("X-RateLimit-Remaining", err.Headers.X_RateLimit_Remaining)
 			w.Header().Add("X-RateLimit-Reset", err.Headers.X_RateLimit_Reset)
 			w.Write([]byte("Too many requests"))
 			return
