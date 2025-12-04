@@ -49,16 +49,10 @@ func (redisStoreClient *RedisStoreClient) Get(ctx context.Context, key string) (
 }
 
 func (redisStoreClient *RedisStoreClient) Set(ctx context.Context, key string, value int32) error {
-	_, err := redisStoreClient.redisClient.Get(ctx, key).Result()
-	if err == redis.Nil {
-		errSet := redisStoreClient.redisClient.Set(ctx, key, strconv.Itoa(int(value)), 0).Err()
-		if errSet != nil {
-			return errors.New("unable to set key on Redis")
-		}
+	err := redisStoreClient.redisClient.Set(ctx, key, strconv.Itoa(int(value)), 0).Err()
+	if err != nil {
+		return errors.New("unable to set key on Redis")
 	}
 
-	if err != nil {
-		return errors.New("unable to get key from Redis")
-	}
 	return nil
 }
