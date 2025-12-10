@@ -5,6 +5,10 @@ import (
 	"sync/atomic"
 )
 
+type MemoryStoreClient struct {
+	buckets map[string]*atomic.Int32
+}
+
 func (memoryStoreClient *MemoryStoreClient) Get(ctx context.Context, key string) (*int32, error) {
 	_, exists := memoryStoreClient.buckets[key]
 	if !exists {

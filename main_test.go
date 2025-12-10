@@ -8,6 +8,15 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestNewNoConfig(t *testing.T) {
+	rateLimiter := New(Config{})
+	logAssert(t, assert.Equal, "Should set the Maximum burst to 100", 100, rateLimiter.cfg.MaximumBurst)
+	logAssert(t, assert.Equal, "Should set the Refill rate per period to 10", 10, rateLimiter.cfg.RefillRatePerPeriod)
+	logAssert(t, assert.Equal, "Should set the period duration in seconds to 60", 60, rateLimiter.cfg.PeriodDurationInSeconds)
+	sameType := assert.IsType(t, &MemoryStoreClient{}, rateLimiter.cfg.StoreClient)
+	logAssert(t, assert.IsType, "Should set the default store to memory", sameType, true)
+}
+
 func TestLogger(t *testing.T) {
 	cases := []struct {
 		name    string
@@ -32,12 +41,17 @@ func TestLogger(t *testing.T) {
 			expected = ""
 		}
 		got := string(terminalOutput)
-		result := assert.Equal(t, expected, got)
-		if !result {
-			t.Errorf("❌ %s: Expected %s, Got %s", tc.name, expected, got)
-		} else {
-			t.Logf("✔️ %s", tc.name)
-		}
+		logAssert(t, assert.Equal, tc.name, expected, got)
+	}
+}
+
+func logAssert[T any](t *testing.T, assertFunc func(t assert.TestingT, expected interface{}, actual interface{}, msgAndArgs ...interface{}) bool, testName string, expected T, actual T) {
+	result := assertFunc(t, expected, actual)
+
+	if !result {
+		t.Errorf("❌ %s: Expected %v, Got %v", testName, expected, actual)
+	} else {
+		t.Logf("✔️ %s", testName)
 	}
 }
 
